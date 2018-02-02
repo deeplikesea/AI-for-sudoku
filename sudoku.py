@@ -1,6 +1,5 @@
 import numpy as np
 import copy as cp
-import queue
 
 class sudoku_solution(object):
     def __init__(self, sd):
@@ -22,7 +21,7 @@ class sudoku_solution(object):
             for m in range(9):
                 small_n = (m//3) + (n//3)*3
                 small_m = (m%3) + (n%3)*3
-                small_sudoku[n].append(sd[small_n][small_m])
+                small_sudoku[n].append(self.sd[small_n][small_m])
         #seond, we find 9 small sudokus to constrain available elements
         sdt = np.transpose(self.sd) # sd transpose
         available = []
@@ -44,13 +43,13 @@ class sudoku_solution(object):
             if list[i] != 0:
                 count += 1
             self.sd[self.row[i]][self.col[i]] = list[i]
-            i += 1
         #print(count)
         #print(list)
         #print(self.sd)
         return count # how many elements it fill in
 
     def depth_search(self):
+        visited = 0
         L = []
         exist = [0 for i in range(len(self.row))]
         L.append(exist)
@@ -67,6 +66,7 @@ class sudoku_solution(object):
             choice = self.available(i)
             # find available value for the next
             L.pop()
+            visited += 1
             if len(choice) == 0:
                 #print(L)
                 continue
@@ -75,15 +75,16 @@ class sudoku_solution(object):
                 exist[i] = val
                 #print(exist)
                 L.append(cp.deepcopy(exist))
-        return self.sd
+        return self.sd, visited
 
     def breadth_search(self):
-        L = queue.Queue()
+        visited = 0
+        L = []
         exist = [0 for i in range(len(self.row))]
-        L.put(exist)
+        L.append(exist)
         while True:
-            if L.empty() == False:
-                exist = L.get()
+            if len(L) != 0:
+                exist = L[0]
                 i = self.fill(exist)
                 if i == len(self.row):
                     break
@@ -93,6 +94,8 @@ class sudoku_solution(object):
             # judge the current situation
             choice = self.available(i)
             # find available value for the next
+            L.pop(0)
+            visited += 1
             if len(choice) == 0:
                 #print(L)
                 continue
@@ -100,13 +103,14 @@ class sudoku_solution(object):
             for val in choice:
                 exist[i] = val
                 #print(exist)
-                L.put(cp.deepcopy(exist))
-            #print(L)
-        return self.sd
+                L.append(cp.deepcopy(exist))
+        return self.sd, visited
 
     def iterative_deepening(self):
+        visited = []
         j = 1
         while j <= len(self.row):
+            count = 0
             L = []
             exist = [0 for i in range(j)]
             L.append(exist)
@@ -114,7 +118,7 @@ class sudoku_solution(object):
                 if len(L) != 0:
                     exist = L[-1]
                     i = self.fill(exist)
-                    if i == j:
+                    if i == len(self.row):
                         break
                 else:
                     print("This sudoku is wrong.")
@@ -123,6 +127,7 @@ class sudoku_solution(object):
                 choice = self.available(i)
                 # find available value for the next
                 L.pop()
+                count += 1
                 if len(choice) == 0:
                     #print(L)
                     continue
@@ -130,8 +135,10 @@ class sudoku_solution(object):
                     exist[i] = val
                     #print(exist)
                     L.append(cp.deepcopy(exist))
+            visited.append(count)
             j += 1
-        return self.sd
+        return self.sd, visited
+
 '''
 sd = [[5,3,0, 0,7,0, 0,0,0],
       [6,0,0, 1,9,5, 0,0,0],
@@ -154,18 +161,27 @@ sd = [[5,3,0, 0,7,0, 0,0,0],
 [3, 4, 5, 2, 8, 6, 1, 7, 9]
 '''
 
-sd_diff = [[0,0,5, 3,0,0, 0,0,0],
-           [8,0,0, 0,0,0, 0,2,0],
-           [0,7,0, 0,1,0, 5,0,0],
-           [4,0,0, 0,0,5, 3,0,0],
-           [0,1,0, 0,7,0, 0,0,6],
-           [0,0,3, 2,0,0, 0,8,0],
-           [0,6,0, 5,0,0, 0,0,9],
-           [0,0,4, 0,0,0, 0,3,0],
-           [0,0,0, 0,0,9, 7,0,0]]
+sd_diff = [[4,0,0, 0,0,0, 0,7,5],
+           [0,3,0, 0,0,0, 1,6,0],
+           [0,0,0, 0,0,2, 0,0,0],
+           [0,0,3, 7,0,0, 8,0,0],
+           [0,0,0, 1,0,8, 0,2,0],
+           [0,0,0, 0,3,0, 0,0,0],
+           [0,0,0, 9,0,0, 7,1,4],
+           [1,0,0, 0,0,6, 0,9,0],
+           [0,4,9, 0,0,3, 0,0,0]]
 
 
 sudoku = sudoku_solution(sd_diff)
-result = sudoku.iterative_deepening()
+result,visited = sudoku.depth_search()
+print(visited)
+for i in range(9):
+    print(result[i])
+result,visited = sudoku.depth_search()
+print(visited)
+for i in range(9):
+    print(result[i])
+result,visited = sudoku.iterative_deepening()
+print(visited)
 for i in range(9):
     print(result[i])
