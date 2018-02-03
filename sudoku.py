@@ -1,5 +1,6 @@
 import numpy as np
 import copy as cp
+import time
 
 class sudoku_solution(object):
     def __init__(self, sd):
@@ -14,6 +15,32 @@ class sudoku_solution(object):
         self.row = row
         self.col = col
         self.sd = sd
+
+    def order(self):
+        small_sudoku = [[],[],[], [],[],[], [],[],[]]
+        for n in range(9):
+            for m in range(9):
+                small_n = (m//3) + (n//3)*3
+                small_m = (m%3) + (n%3)*3
+                small_sudoku[n].append(self.sd[small_n][small_m])
+        #seond, we find 9 small sudokus to constrain available elements
+        sdt = np.transpose(self.sd) # sd transpose
+        weight_value = []
+        for i in range(len(self.row)):
+            count = 0
+            for val in [1,2,3,4,5,6,7,8,9]:
+                if (val not in self.sd[self.row[i]]) and (val not in sdt[self.col[i]]) and (val not in small_sudoku[(self.row[i]//3)*3 + (self.col[i]//3)]):
+                    count += 1
+            weight_value.append(count)
+        order_row = []
+        order_col = []
+        for i in range(min(weight_value),max(weight_value)+1):
+            for n in range(len(self.row)):
+                if weight_value[n] == i:
+                    order_row.append(self.row[n])
+                    order_col.append(self.col[n])
+        self.row = order_row
+        self.col = order_col
 
     def available(self, i):
         small_sudoku = [[],[],[], [],[],[], [],[],[]]
@@ -49,11 +76,16 @@ class sudoku_solution(object):
         return count # how many elements it fill in
 
     def depth_search(self):
+        self.order()
         visited = 0
         L = []
-        exist = [0 for i in range(len(self.row))]
+        space = 0
+
+        exist = [0 for i in range(len(self.row))]# it will help us reset soduku back to original state if it's already calculated
         L.append(exist)
         while True:
+            if space < len(L):
+                space = len(L)
             if len(L) != 0:
                 exist = L[-1]
                 i = self.fill(exist)
@@ -75,14 +107,21 @@ class sudoku_solution(object):
                 exist[i] = val
                 #print(exist)
                 L.append(cp.deepcopy(exist))
-        return self.sd, visited
+        return self.sd, visited, space
+#visited is a value to display how many nodes we've visited during the whole process
+#space is a value to display how many memory we used but keep in mind, here the unit is a sudoku
 
     def breadth_search(self):
+        self.order()
         visited = 0
         L = []
+        space = 0
+
         exist = [0 for i in range(len(self.row))]
         L.append(exist)
         while True:
+            if space < len(L):
+                space = len(L)
             if len(L) != 0:
                 exist = L[0]
                 i = self.fill(exist)
@@ -104,25 +143,33 @@ class sudoku_solution(object):
                 exist[i] = val
                 #print(exist)
                 L.append(cp.deepcopy(exist))
-        return self.sd, visited
+        return self.sd, visited, space
 
     def iterative_deepening(self):
-        visited = []
+        self.order()
+        temp = []
         j = 1
+        space = 0
+
         while j <= len(self.row):
             count = 0
             L = []
             exist = [0 for i in range(j)]
             L.append(exist)
             while True:
+                if space < len(L):
+                    space = len(L)
                 if len(L) != 0:
                     exist = L[-1]
                     i = self.fill(exist)
                     if i == len(self.row):
                         break
                 else:
-                    print("This sudoku is wrong.")
-                    break
+                    if j == len(self.row):
+                        print("This sudoku is wrong.")
+                        break
+                    else:
+                        break
                 # judge the current situation
                 choice = self.available(i)
                 # find available value for the next
@@ -135,9 +182,12 @@ class sudoku_solution(object):
                     exist[i] = val
                     #print(exist)
                     L.append(cp.deepcopy(exist))
-            visited.append(count)
+            temp.append(count)
             j += 1
-        return self.sd, visited
+        visited = 0
+        for val in temp:
+            visited += val
+        return self.sd, visited, space
 
 '''
 sd = [[5,3,0, 0,7,0, 0,0,0],
@@ -171,17 +221,34 @@ sd_diff = [[4,0,0, 0,0,0, 0,7,5],
            [1,0,0, 0,0,6, 0,9,0],
            [0,4,9, 0,0,3, 0,0,0]]
 
+if __name__ == '__main__':
+#below is what we trying to test the speed of each algorithms
+    sudoku = sudoku_solution(sd_diff)
+    begin = time.clock()
+    result, visited, space = sudoku.depth_search()
+    end = time.clock()
+    print("Execution Time in seconds for depth_first:",end-begin)
+    print(visited)
+    print(space)
+    for i in range(9):
+        print(result[i])
+    print("----------------------")
 
-sudoku = sudoku_solution(sd_diff)
-result,visited = sudoku.depth_search()
-print(visited)
-for i in range(9):
-    print(result[i])
-result,visited = sudoku.depth_search()
-print(visited)
-for i in range(9):
-    print(result[i])
-result,visited = sudoku.iterative_deepening()
-print(visited)
-for i in range(9):
-    print(result[i])
+    begin = time.clock()
+    result, visited, space = sudoku.breadth_search()
+    end = time.clock()
+    print("Execution Time in seconds for breadth_first:",end-begin)
+    print(visited)
+    print(space)
+    for i in range(9):
+        print(result[i])
+    print("----------------------")
+
+    begin = time.clock()
+    result, visited, space = sudoku.iterative_deepening()
+    end = time.clock()
+    print("Execution Time in seconds for iterative_deepening:",end-begin)
+    print(visited)
+    print(space)
+    for i in range(9):
+        print(result[i])
