@@ -16,7 +16,7 @@ class sudoku_solution(object):
         self.col = col
         self.sd = sd
 
-    def order(self):
+    def order(self):# this function just help you accelerate your speed, just shrink the search tree, you can ignore it.
         small_sudoku = [[],[],[], [],[],[], [],[],[]]
         for n in range(9):
             for m in range(9):
@@ -42,7 +42,7 @@ class sudoku_solution(object):
         self.row = order_row
         self.col = order_col
 
-    def available(self, i):
+    def available(self, i):# find the available digits for the current empty box.
         small_sudoku = [[],[],[], [],[],[], [],[],[]]
         for n in range(9):
             for m in range(9):
@@ -64,7 +64,7 @@ class sudoku_solution(object):
         # judge if elements are qualified before taking
 
 
-    def fill(self, list):
+    def fill(self, list):# fill the current state to check if it's right.
         count = 0
         for i in range(len(list)):
             if list[i] != 0:
@@ -76,9 +76,9 @@ class sudoku_solution(object):
         return count # how many elements it fill in
 
     def depth_search(self):
-        self.order()
+        self.order()#you know you can ignore this functioin,it's all right to delete this. 
         visited = 0
-        L = []
+        L = []# L is to store states.
         space = 0
 
         exist = [0 for i in range(len(self.row))]# it will help us reset soduku back to original state if it's already calculated
